@@ -1,0 +1,23 @@
+server:
+  port: 8080                                    # 服务端口号
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver  # MySQL 8.0 驱动类
+    url: jdbc:mysql://localhost:3306/ecommerce?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root                               # 数据库用户名
+    password: 123456                             # 数据库密码
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true           # 下划线转驼峰：数据库字段 order_no → Java 属性 orderNo
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  # 控制台打印 SQL 语句（调试用）
+  global-config:
+    db-config:
+      id-type: auto                              # 主键自增策略
+
+# JWT 配置
+jwt:
+  secret: ecommerce-platform-secret-key-2024-software-architecture-final-project  # 签名密钥
+  expiration: 86400000                           # Token 有效期：24小时（毫秒）

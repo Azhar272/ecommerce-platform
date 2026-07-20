@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订单详情 - 电商平台</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/api.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="index.html" class="logo">🛒 电商平台</a>
+    <div class="nav-links">
+        <a href="index.html">首页</a>
+        <a href="cart.html">购物车</a>
+        <a href="orders.html">我的订单</a>
+    </div>
+    <div class="user-info" id="userInfo">
+        <a href="login.html">登录</a>
+    </div>
+</nav>
+
+<div class="container">
+    <a href="orders.html" style="color:#409eff;text-decoration:none;">← 返回订单列表</a>
+    <div id="detailContent" style="margin-top:20px;"></div>
+</div>
+
+<script>
+const urlParams = new URLSearchParams(location.search);
+const orderId = urlParams.get('id');
+
+const statusMap = {
+    'PENDING': '待支付', 'PAID': '已支付',
+    'SHIPPED': '已发货', 'DELIVERED': '已签收', 'CANCELLED': '已取消'
+};
+
+window.onload = function() {
+    updateNavBar();
+    loadDetail();
+};
+
+function updateNavBar() {
+    const user = getCurrentUser();
+    if (user) {
+        document.getElementById('userInfo').innerHTML =
+            '<span>👤 ' + user.username + '</span>' +
+            '<a href="#" onclick="logout();return false">退出</a>';
+    }
+}
+
+async function loadDetail() {
+    const res = await orderApi.detail(orderId);
+    if (!res || res.code !== 200) {
+        document.getElementById('detailContent').innerHTML = '<p>订单不存在</p>';
+        return;
+    }
+
+    const order = res.data.order;
+    const items = res.data.items;
+
+    let itemsHtml = '<table class="cart-table" style="margin-top:16px;">' +
+        '<tr><th>商品图片</th><th>商品名</th><th>单价</th><th>数量</th><th>小计</th></tr>';
+
+    for (const item of items) {
+        itemsHtml += '<tr>' +
+            '<td>' + (item.productImage
+                ? '<img src="' + item.productImage + '" style="width:60px;height:60px;object-fit:cover;border-radius:4px;" onerror="this.alt=\'📦\'">'
+                : '📦') + '</td>' +
+            '<td>' + item.productName + '</td>' +
+            '<td>¥' + item.price + '</td>' +
+            '<td>' + item.quantity + '</td>' +
+            '<td style="color:#f56c6c;font-weight:bold;">¥' + item.subtotal + '</td>' +
+        '</tr>';
+    }
+    itemsHtml += '</table>';
+
+    document.getElementById('detailContent').innerHTML =
+        '<div style="background:#fff;padding:24px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">' +
+            '<h3>订单信息</h3>' +
+            '<div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:14px;">' +
+                '<div><strong>订单编号：</strong>' + order.orderNo + '</div>' +
+                '<div><strong>订单状态：</strong>' +
+                    '<span class="order-status status-' + order.status + '">' + (statusMap[order.status] || order.status) + '</span></div>' +
+                '<div><strong>下单时间：</strong>' + order.createdAt + '</div>' +
+                '<div><strong>总金额：</strong><span style="color:#f56c6c;font-size:18px;font-weight:bold;">¥' + order.totalAmount + '</span></div>' +
+                '<div><strong>收货人：</strong>' + order.shippingName + ' (' + order.shippingPhone + ')</div>' +
+                '<div><strong>收货地址：</strong>' + order.shippingAddress + '</div>' +
+            '</div>' +
+            (order.remark ? '<div style="margin-top:12px;font-size:14px;"><strong>备注：</strong>' + order.remark + '</div>' : '') +
+        '</div>' +
+        '<h3 style="margin-top:24px;">商品明细</h3>' +
+        itemsHtml;
+}
+</script>
+</body>
+</html>

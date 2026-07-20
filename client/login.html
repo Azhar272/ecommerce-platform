@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 电商平台</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/api.js"></script>
+</head>
+<body>
+<nav class="navbar">
+    <a href="index.html" class="logo">🛒 电商平台</a>
+    <div class="nav-links">
+        <a href="index.html">返回首页</a>
+    </div>
+</nav>
+
+<div class="auth-page">
+    <div class="auth-box">
+        <h2>用户登录</h2>
+        <div class="form-group">
+            <label>用户名</label>
+            <input type="text" id="username" placeholder="请输入用户名">
+        </div>
+        <div class="form-group">
+            <label>密码</label>
+            <input type="password" id="password" placeholder="请输入密码" onkeyup="if(event.key==='Enter')doLogin()">
+        </div>
+        <button class="btn btn-primary" onclick="doLogin()">登 录</button>
+        <div class="switch-link">
+            还没有账号？<a href="register.html">立即注册</a>
+        </div>
+        <div style="margin-top:12px;font-size:13px;color:#909399;text-align:center;">
+            提示：管理员账号 admin / 123456<br>普通用户 zhangsan / 123456
+        </div>
+    </div>
+</div>
+
+<script>
+async function doLogin() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    if (!username || !password) {
+        return showToast('请输入用户名和密码', 'error');
+    }
+
+    const res = await userApi.login({ username, password });
+    if (!res || res.code !== 200) {
+        return showToast(res ? res.message : '登录失败', 'error');
+    }
+
+    // 保存登录信息
+    localStorage.setItem('ecommerce_token', res.data.token);
+    localStorage.setItem('ecommerce_user', JSON.stringify({
+        userId: res.data.userId,
+        username: res.data.username,
+        role: res.data.role
+    }));
+
+    showToast('登录成功！', 'success');
+    setTimeout(function() {
+        location.href = 'index.html';
+    }, 800);
+}
+
+/** Toast 提示 */
+function showToast(msg, type) {
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-' + type;
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(function() { toast.remove(); }, 2500);
+}
+</script>
+</body>
+</html>

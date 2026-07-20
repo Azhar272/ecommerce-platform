@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的订单 - 电商平台</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/api.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="index.html" class="logo">🛒 电商平台</a>
+    <div class="nav-links">
+        <a href="index.html">首页</a>
+        <a href="cart.html">购物车</a>
+        <a href="orders.html">我的订单</a>
+    </div>
+    <div class="user-info" id="userInfo">
+        <a href="login.html">登录</a>
+    </div>
+</nav>
+
+<div class="container">
+    <h2 style="margin-bottom:20px;">📋 我的订单</h2>
+    <div id="orderList"></div>
+    <div class="pagination" id="pagination"></div>
+</div>
+
+<script>
+let currentPage = 1;
+const statusMap = {
+    'PENDING': '待支付', 'PAID': '已支付',
+    'SHIPPED': '已发货', 'DELIVERED': '已签收', 'CANCELLED': '已取消'
+};
+
+window.onload = function() {
+    updateNavBar();
+    if (!isLoggedIn()) {
+        document.getElementById('orderList').innerHTML =
+            '<div style="text-align:center;padding:80px;">' +
+            '<p style="font-size:18px;color:#999;margin-bottom:16px;">请先登录后查看订单</p>' +
+            '<a href="login.html" class="btn btn-primary">去登录</a>' +
+            '</div>';
+        return;
+    }
+    loadOrders();
+};
+
+function updateNavBar() {
+    const user = getCurrentUser();
+    if (user) {
+        document.getElementById('userInfo').innerHTML =
+            '<span>👤 ' + user.username + '</span>' +
+            '<a href="#" onclick="logout();return false">退出</a>';
+    }
+}
+
+/** 加载订单列表 */
+async function loadOrders() {
+    const res = await orderApi.myOrders(currentPage, 10);
+    if (!res || res.code !== 200) return;
+
+    const pageData = res.data;
+    const orders = pageData.records;
+
+    if (!orders || orders.length === 0) {
+        document.getElementById('orderList').innerHTML =
+            '<div style="text-align:center;padding:80px;color:#999;">' +
+            '<p style="font-size:48px;">📋</p>' +
+            '<p style="font-size:18px;margin-top:12px;">还没有订单</p>' +
+            '<a href="index.html" class="btn btn-primary" style="margin-top:16px;">去逛逛</a>' +
+            '</div>';
+        return;
+    }
+
+    let html = '';
+    for (const order of orders) {
+        const statusText = statusMap[order.status] || order.status;
+        html += '<div class="order-card">' +
+            '<div class="order-header">' +
+                '<div>' +
+                    '<span class="order-no">订单号：' + order.orderNo + '</span>' +
+                    '<span style="margin-left:12px;font-size:13px;color:#999;">' + order.createdAt + '</span>' +
+                '</div>' +
+                '<span class="order-status status-' + order.status + '">' + statusText + '</span>' +
+            '</div>' +
+            '<div style="font-size:14px;color:#666;margin-bottom:10px;">' +
+                '收货人：' + order.shippingName + ' | ' + order.shippingPhone +
+                '<br>收货地址：' + order.shippingAddress +
+            '</div>' +
+            '<div class="order-footer">' +
+                '<span style="font-size:16px;">合计：<strong style="color:#f56c6c;">¥' + order.totalAmount + '</strong></span>' +
+                '<div style="display:flex;gap:8px;">' +
+                    (order.status === 'PENDING'
+                        ? '<button class="btn btn-danger btn-small" onclick="cancelOrder(' + order.id + ')">取消订单</button>'
+                        : '') +
+                    '<button class="btn btn-primary btn-small" onclick="viewDetail(' + order.id + ')">查看详情</button>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    }
+    document.getElementById('orderList').innerHTML = html;
+
+    // 分页
+    const totalPages = Math.ceil(pageData.total / pageData.size);
+    const pag = document.getElementById('pagination');
+    if (totalPages <= 1) { pag.innerHTML = ''; return; }
+    let pagHtml = '';
+    for (let i = 1; i <= totalPages; i++) {
+        pagHtml += '<button class="' + (i === currentPage ? 'active' : '') + '" onclick="goPage(' + i + ')">' + i + '</button>';
+    }
+    pag.innerHTML = pagHtml;
+}
+
+function goPage(p) {
+    currentPage = p;
+    loadOrders();
+}
+
+/** 取消订单 */
+async function cancelOrder(id) {
+    if (!confirm('确定要取消该订单吗？')) return;
+    const res = await orderApi.cancel(id);
+    if (res && res.code === 200) {
+        showToast('订单已取消', 'success');
+        loadOrders();
+    } else {
+        showToast(res ? res.message : '取消失败', 'error');
+    }
+}
+
+/** 查看详情 */
+function viewDetail(id) {
+    location.href = 'order-detail.html?id=' + id;
+}
+
+function showToast(msg, type) {
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-' + type;
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(function() { toast.remove(); }, 2500);
+}
+</script>
+</body>
+</html>

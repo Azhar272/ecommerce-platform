@@ -1,0 +1,32 @@
+# ===== IDE =====
+.idea/
+*.iml
+.vscode/
+
+# ===== Java/Maven =====
+server/target/
+server/*.class
+server/.apt_generated
+server/.classpath
+server/.factorypath
+server/.project
+server/.settings
+server/.springBeans
+server/.sts4-cache
+server/bin/
+server/!**/src/main/**/bin/
+server/!**/src/test/**/bin/
+server/nbproject/private/
+server/nbbuild/
+server/dist/
+server/nbdist/
+server/.nb-gradle/
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== 大文件 =====
+*.doc
+*.docx
+*.pdf

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品详情 - 电商平台</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/api.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+    <a href="index.html" class="logo">🛒 电商平台</a>
+    <div class="nav-links">
+        <a href="index.html">首页</a>
+        <a href="cart.html">购物车</a>
+        <a href="orders.html">我的订单</a>
+    </div>
+    <div class="user-info" id="userInfo">
+        <a href="login.html">登录</a>
+    </div>
+</nav>
+
+<div class="container">
+    <div id="productDetail"></div>
+
+    <!-- 评价区域 -->
+    <div class="review-list" id="reviewSection" style="margin-top:40px;">
+        <h3 style="margin-bottom:16px;">📝 商品评价</h3>
+        <div id="reviewList"></div>
+
+        <!-- 发表评价（需要登录） -->
+        <div id="reviewForm" style="margin-top:20px;padding:20px;background:#fff;border-radius:8px;display:none;">
+            <h4>发表评价</h4>
+            <div class="form-group">
+                <label>评分</label>
+                <select id="rating">
+                    <option value="5">⭐⭐⭐⭐⭐ 5分</option>
+                    <option value="4">⭐⭐⭐⭐ 4分</option>
+                    <option value="3">⭐⭐⭐ 3分</option>
+                    <option value="2">⭐⭐ 2分</option>
+                    <option value="1">⭐ 1分</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>评价内容</label>
+                <textarea id="reviewContent" placeholder="分享你的使用体验..."></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="submitReview()">提交评价</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// 从 URL 获取商品ID
+const urlParams = new URLSearchParams(location.search);
+const productId = urlParams.get('id');
+
+window.onload = function() {
+    updateNavBar();
+    loadProductDetail();
+    loadReviews();
+};
+
+function updateNavBar() {
+    const user = getCurrentUser();
+    if (user) {
+        document.getElementById('userInfo').innerHTML =
+            '<span>👤 ' + user.username + '</span>' +
+            '<a href="#" onclick="logout();return false">退出</a>';
+        // 登录后才能评价
+        document.getElementById('reviewForm').style.display = 'block';
+    }
+}
+
+/** 加载商品详情 */
+async function loadProductDetail() {
+    const res = await productApi.detail(productId);
+    if (!res || res.code !== 200) {
+        document.getElementById('productDetail').innerHTML = '<p>商品不存在</p>';
+        return;
+    }
+    const p = res.data;
+    document.getElementById('productDetail').innerHTML =
+        '<div class="detail-layout">' +
+            '<div class="detail-img">' +
+                (p.imageUrl
+                    ? '<img src="' + p.imageUrl + '" alt="' + p.name + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\';this.parentElement.textContent=\'📦\'">'
+                    : '📦') +
+            '</div>' +
+            '<div class="detail-info">' +
+                '<h1>' + p.name + '</h1>' +
+                '<div class="price">¥' + p.price + '</div>' +
+                '<div class="meta">库存：' + p.stock + ' | 已售：' + (p.salesCount || 0) + '</div>' +
+                '<div class="desc">' + (p.description || '暂无描述') + '</div>' +
+                '<div class="qty-input">' +
+                    '<button onclick="changeQty(-1)">−</button>' +
+                    '<input type="number" id="quantity" value="1" min="1" max="' + p.stock + '">' +
+                    '<button onclick="changeQty(1)">+</button>' +
+                '</div>' +
+                '<button class="btn btn-primary" onclick="addToCart()">🛒 加入购物车</button>' +
+            '</div>' +
+        '</div>';
+}
+
+function changeQty(delta) {
+    const input = document.getElementById('quantity');
+    let val = parseInt(input.value) + delta;
+    if (val < 1) val = 1;
+    if (val > parseInt(input.max)) val = parseInt(input.max);
+    input.value = val;
+}
+
+/** 加入购物车 */
+async function addToCart() {
+    if (!isLoggedIn()) {
+        if (confirm('请先登录！是否跳转到登录页？')) {
+            location.href = 'login.html';
+        }
+        return;
+    }
+    const quantity = parseInt(document.getElementById('quantity').value);
+    const res = await cartApi.add({ productId: parseInt(productId), quantity: quantity });
+    if (res && res.code === 200) {
+        showToast('已加入购物车', 'success');
+    } else {
+        showToast(res ? res.message : '添加失败', 'error');
+    }
+}
+
+/** 加载评价列表 */
+async function loadReviews() {
+    const res = await reviewApi.list(productId);
+    if (!res || res.code !== 200) return;
+
+    const reviews = res.data;
+    const list = document.getElementById('reviewList');
+    if (!reviews || reviews.length === 0) {
+        list.innerHTML = '<p style="color:#999;">暂无评价，快来第一个评价吧～</p>';
+        return;
+    }
+    list.innerHTML = reviews.map(function(r) {
+        let stars = '';
+        for (let i = 0; i < r.rating; i++) stars += '⭐';
+        return '<div class="review-card">' +
+            '<div class="stars">' + stars + '</div>' +
+            '<div class="reviewer">' + r.username + ' · ' + r.createdAt + '</div>' +
+            '<div class="content">' + (r.content || '') + '</div>' +
+        '</div>';
+    }).join('');
+}
+
+/** 提交评价 */
+async function submitReview() {
+    const rating = parseInt(document.getElementById('rating').value);
+    const content = document.getElementById('reviewContent').value.trim();
+
+    const res = await reviewApi.submit({
+        productId: parseInt(productId),
+        rating: rating,
+        content: content
+    });
+
+    if (res && res.code === 200) {
+        showToast('评价成功', 'success');
+        document.getElementById('reviewContent').value = '';
+        loadReviews();
+    } else {
+        showToast(res ? res.message : '评价失败', 'error');
+    }
+}
+
+function showToast(msg, type) {
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-' + type;
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(function() { toast.remove(); }, 2500);
+}
+</script>
+</body>
+</html>
