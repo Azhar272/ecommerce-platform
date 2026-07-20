@@ -106,7 +106,29 @@ mvn spring-boot:run
 
 ## 运行截图
 
-> 请在此处补充运行截图或演示视频链接
+### 数据库
+<img width="484" alt="数据库" src="https://github.com/user-attachments/assets/28ea5654-4fb9-43eb-925f-eddfd20e3fe8" />
+
+### 登录页面
+<img width="484" alt="登录页面" src="https://github.com/user-attachments/assets/cad57e58-a436-471f-9c72-46ba578afb5a" />
+
+### 首页（商品浏览）
+<img width="484" alt="首页" src="https://github.com/user-attachments/assets/50e7fa0d-6594-4b11-9827-a347dae6dbe7" />
+
+### 购物车
+<img width="485" alt="购物车" src="https://github.com/user-attachments/assets/e256d844-2395-4322-82d2-1600785f844d" />
+
+### 订单页面
+<img width="484" alt="订单页面" src="https://github.com/user-attachments/assets/0f34a045-6961-4084-abe0-66d5bf9609af" />
+
+### 管理员后台
+<img width="484" alt="管理员后台" src="https://github.com/user-attachments/assets/c61a3d02-abed-4938-987f-eed746299a55" />
+
+### 后端项目结构（IDE）
+<img width="484" alt="后端" src="https://github.com/user-attachments/assets/04ea9211-f9ab-47a2-9f58-f2832b862499" />
+
+### 前端项目结构（IDE）
+<img width="484" alt="前端" src="https://github.com/user-attachments/assets/c4f48543-708e-4191-98ac-c302bf50c078" />
 
 ## 许可证
 
