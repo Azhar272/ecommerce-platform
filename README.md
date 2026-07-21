@@ -71,6 +71,42 @@ mvn spring-boot:run
 ### 4. 打开前端
 直接用浏览器打开 `client/index.html`，或使用 Live Server。
 
+## 单元测试
+
+项目为 4 个核心服务编写了 JUnit 5 + Mockito 单元测试，覆盖主要业务逻辑。
+
+### 运行测试
+
+```bash
+cd server
+mvn test
+```
+
+### 测试结果（2026-07-21）
+
+```
+Tests run: 28, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
+```
+
+### 测试覆盖详情
+
+| 测试类 | 被测服务 | 测试数 | 验证内容 |
+|--------|---------|--------|---------|
+| `CartServiceImplTest` | 购物车服务 | 9 | 添加购物车（新增/重复/下架/库存不足/商品不存在）、更新数量、删除、切换勾选 |
+| `OrderServiceImplTest` | 订单服务 | 9 | 下单（正常/空购物车/下架/库存不足）、取消订单（正常/越权/非待支付状态）、更新订单状态 |
+| `ReviewServiceImplTest` | 评价服务 | 3 | 发表评价（正常/重复）、获取评价列表（含用户名） |
+| `UserServiceImplTest` | 用户服务 | 7 | 注册（正常/重复用户名）、登录（正确/密码错误/不存在）、按用户名查找 |
+
+所有测试使用 Mockito 对 MyBatis-Plus Mapper 层进行隔离 Mock，无需连接数据库即可运行。
+
+### 测试技术说明
+
+- **测试框架**：JUnit 5 (`@Nested` + `@DisplayName` 中文描述)
+- **Mock 框架**：Mockito（`@Mock` + `@ExtendWith(MockitoExtension.class)`）
+- **依赖注入**：因 MyBatis-Plus `ServiceImpl` 父类的 `baseMapper` 无法通过 `@InjectMocks` 注入，使用 `ReflectionTestUtils.setField()` 手动注入
+- **JDK 兼容**：运行于 JDK 24，需添加 `-Dnet.bytebuddy.experimental=true` JVM 参数
+
 ## AI 辅助开发声明
 
 本项目使用 **Claude Code** 作为编程辅助工具。所有代码均经过本人**审查、理解和修改**。以下是本人手写与 AI 生成的边界说明：
